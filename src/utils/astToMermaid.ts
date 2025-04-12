@@ -1,3 +1,5 @@
+import { Program } from "esprima";
+
 let nodeId = 0;
 
 function getId() {
@@ -8,10 +10,10 @@ export function resetMermaidCounter() {
   nodeId = 0;
 }
 
-export function astToMermaid(ast: any): string {
+export function astToMermaid(ast: Program): string {
   if (!ast || !ast.body || !Array.isArray(ast.body)) return "";
 
-  let lines: string[] = ["graph TD"];
+  const lines: string[] = ["graph TD"];
 
   const walk = (node: any, parentId?: string): string => {
     const id = getId();
