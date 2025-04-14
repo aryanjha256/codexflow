@@ -1,4 +1,23 @@
 import { Program } from "esprima";
+import { Expression, PrivateIdentifier, Super } from "estree";
+
+export interface FlowNode {
+  id: string;
+  label: string;
+  type: "start" | "decision" | "operation" | "end";
+}
+
+export interface FlowEdge {
+  from: string;
+  to: string;
+  label?: string;
+}
+
+export interface FlowGraph {
+  nodes: FlowNode[];
+  edges: FlowEdge[];
+  executionPath?: string[]; // IDs of nodes that are executed
+}
 
 let nodeId = 0;
 
@@ -15,24 +34,23 @@ export function astToMermaid(ast: Program): string {
 
   const lines: string[] = ["graph TD"];
 
-  const walk = (node: any, parentId?: string): string => {
+  const walk = (node: (typeof ast.body)[0], parentId?: string): string => {
     const id = getId();
 
     switch (node.type) {
-      case "FunctionDeclaration":
+      case "FunctionDeclaration": {
         const funcId = `${id}["Function: ${node.id.name}"]`;
         lines.push(funcId);
-        let lastId = funcId;
 
-        node.body.body.forEach((stmt: any) => {
+        node.body.body.forEach((stmt: (typeof node.body.body)[0]) => {
           const childId = walk(stmt, id);
           lines.push(`${id} --> ${childId}`);
-          lastId = childId;
         });
 
         return id;
+      }
 
-      case "IfStatement":
+      case "IfStatement": {
         const test = `${id}{"if (${generateCode(node.test)})"}`;
         lines.push(test);
 
@@ -45,18 +63,21 @@ export function astToMermaid(ast: Program): string {
         }
 
         return id;
+      }
 
-      case "ReturnStatement":
+      case "ReturnStatement": {
         const returnId = `${id}["return ${generateCode(node.argument)}"]`;
         lines.push(returnId);
         return id;
+      }
 
-      case "ExpressionStatement":
+      case "ExpressionStatement": {
         const exprId = `${id}["${generateCode(node.expression)}"]`;
         lines.push(exprId);
         return id;
+      }
 
-      case "WhileStatement":
+      case "WhileStatement": {
         const whileId = `${id}{"while (${generateCode(node.test)})"}`;
         lines.push(whileId);
 
@@ -66,10 +87,11 @@ export function astToMermaid(ast: Program): string {
         lines.push(`${id} -->|false| ${getId()}["End while"]`);
 
         return id;
+      }
 
-      case "BlockStatement":
+      case "BlockStatement": {
         let prevId = id;
-        node.body.forEach((stmt: any, i: number) => {
+        node.body.forEach((stmt: (typeof node.body)[0], i: number) => {
           const stmtId = walk(stmt, prevId);
           if (i === 0 && parentId) {
             lines.push(`${parentId} --> ${stmtId}`);
@@ -79,20 +101,24 @@ export function astToMermaid(ast: Program): string {
           prevId = stmtId;
         });
         return id;
+      }
 
-      default:
+      default: {
         const defaultId = `${id}["${node.type}"]`;
         lines.push(defaultId);
         return id;
+      }
     }
   };
 
-  ast.body.forEach((node: any) => walk(node));
+  ast.body.forEach((node: (typeof ast.body)[0]) => walk(node));
 
   return lines.join("\n");
 }
 
-function generateCode(node: any): string {
+function generateCode(
+  node: Expression | PrivateIdentifier | Super | null | undefined
+): string {
   try {
     return node?.type === "Literal"
       ? JSON.stringify(node.value)

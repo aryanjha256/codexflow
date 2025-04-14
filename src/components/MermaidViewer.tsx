@@ -34,10 +34,15 @@ export default function MermaidViewer({ chart }: MermaidViewerProps) {
       }
     };
 
+    if (!chart) return;
+
     renderMermaid();
   }, [chart]);
 
   return (
-    <div ref={ref} className="overflow-x-auto p-4 bg-white rounded shadow" />
+    <div
+      ref={ref}
+      className="overflow-x-auto p-4 border-amber-50 border rounded shadow"
+    />
   );
 }

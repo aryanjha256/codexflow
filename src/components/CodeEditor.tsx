@@ -12,6 +12,7 @@ export default function CodeEditor({ code, onChange }: Props) {
       <Editor
         height="100%"
         defaultLanguage="javascript"
+        theme="vs-dark"
         value={code}
         onChange={(value) => onChange(value || "")}
         options={{
